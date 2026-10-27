@@ -1,0 +1,44 @@
+/*
+*--------------------------------------------------------------------*
+* Program code: atm_ip_alternative_identification
+* Program name: Atomic Involved Party Alternative Identification SCMS.SC_FIRM_SENIOR_PERSONNEL
+* Created by:
+* Created date:
+*--------------------------------------------------------------------*
+* Modified management
+* Date				User				Description
+*
+*--------------------------------------------------------------------*
+*/
+
+WITH sc_fi_se_pe AS (
+    SELECT
+        id
+        , issue_date
+        , issue_place
+        , id_number
+        , national_id
+    FROM {{ ref('ods_scms_sc_firm_senior_personnel') }}
+),
+
+unpvt AS (
+    SELECT *
+    FROM sc_fi_se_pe
+    UNPIVOT (
+        identification_nbr
+        FOR identification_tp_code IN (
+            id_number AS LEGACY_NATIONAL_ID,
+            national_id AS NATIONAL_ID
+        )
+    )
+)
+
+SELECT
+    CAST('SCMS_SC_FIRM_SENIOR_PERSONNEL' AS string)                                    AS src_stm_code
+    , CAST(unpvt.identification_tp_code AS string)                                     AS identification_tp_code
+    , CAST(unpvt.identification_nbr AS string)                                         AS identification_nbr
+    , CAST(unpvt.issue_date AS date)                                                   AS identification_issue_dt
+    , CAST(unpvt.issue_place AS string)                                                AS identification_issue_place
+    , {{ generate_surrogate_key_bigint('SCMS_SC_FIRM_SENIOR_PERSONNEL', "unpvt.id") }} AS ip_id
+    , CAST(unpvt.id AS string)                                                         AS ip_code
+FROM unpvt

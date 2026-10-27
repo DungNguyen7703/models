@@ -1,0 +1,40 @@
+# ==========================================================================================
+# FIRST-TIME PTTT: bo model khoi tao du lieu lich su cho phan he PTTT.
+# - Ten model = 'ft_' + ten model daily; ghi vao DUNG bang vat ly cua model daily qua config ft_target
+#   (materialization ft_incremental_rebase trong macros/first_time - dung chung voi GSTT/NDTNN).
+# - Tag first_time + domain_first_time: orchestrator chi chay khi chon dich danh (giong GSTT).
+#   Tag first_time_pttt: chon rieng bo PTTT.
+# - 2026-10-24 tuan.nguyenvanb: tao moi (ft_dtm_fct_market_risk_snpst + flat).
+# ==========================================================================================
+version: 2
+models:
+- name: ft_dtm_fct_market_risk_snpst
+  description: '[FIRST-TIME] Ban khoi tao du lieu lich su cua dtm_fct_market_risk_snpst - ghi vao bang that fct_market_risk_snpst.'
+  config:
+    materialized: ft_incremental_rebase
+    ft_target: fct_market_risk_snpst
+    incremental_strategy: append
+    ft_skip_count_check: true
+    partition_by:
+    - ds_snpst_dt
+    file_format: '{{ var("file_format") }}'
+    schema: '{{ var("dtm_schema") }}'
+    tags:
+    - first_time
+    - domain_first_time
+    - first_time_pttt
+- name: ft_pttt_fct_market_risk_snpst_flat
+  description: '[FIRST-TIME] Ban khoi tao du lieu lich su cua pttt_fct_market_risk_snpst_flat - ghi vao bang that pttt_fct_market_risk_snpst_flat.'
+  config:
+    materialized: ft_incremental_rebase
+    ft_target: pttt_fct_market_risk_snpst_flat
+    incremental_strategy: ft_ck_by_day
+    partition_by:
+    - ds_snpst_dt
+    file_format: '{{ var(''file_format'') }}'
+    schema: '{{ var(''ck_schema'') }}'
+    tags:
+    - first_time
+    - domain_first_time
+    - first_time_pttt
+    ft_day_column: snpst_cdr_dt
